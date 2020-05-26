@@ -20,6 +20,11 @@ REAL_SQUID_PORT=3128
 squid_username=squid
 # squid的密码
 squid_password=online
+# 最多允许多少个认证进程
+squid_children=20
+# 单ip的最大连接数
+maxconn=50
+
 
 # 是否配置docker加速器   1/0
 docker_accelerator=1
@@ -85,7 +90,7 @@ echo "http_port 3128
 auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/ncsa_users
 auth_param basic realm proxy # 认证提示
 auth_param basic realm Squid proxy-caching web server # 认证提示的内容
-auth_param basic children 20 # 认证进程
+auth_param basic children $squid_children # 认证进程
 auth_param basic credentialsttl 2 hours # 认证有效期
 auth_param basic casesensitive off # 用户名不区分大小写
 
@@ -102,8 +107,9 @@ acl Safe_ports port 80 8080
 acl Safe_ports port 21
 acl Safe_ports port 443
 acl CONNECT method CONNECT
-# acl OverConnLimit maxconn 200
-# http_access deny OverConnLimit
+
+acl OverConnLimit maxconn $maxconn
+http_access deny OverConnLimit
 
 http_access allow manager localhost
 http_access deny manager
