@@ -40,7 +40,7 @@ squid_cache=$squid_dir/cache
 squid_logs=$squid_dir/logs
 
 # 生成用户认证信息
-encrypt_ret=`curl -XPOST https://tool.lu/htpasswd/ajax.html -d "username=$squid_username&password=$squid_password&type=md5"`
+encrypt_ret=`curl --request POST https://tool.lu/htpasswd/ajax.html -d "username=$squid_username&password=$squid_password&type=md5"`
 encrypt_content=`echo $encrypt_ret | grep true | echo ${encrypt_ret:23:-2}`
 if [ -z "$encrypt_content" ]
 then
