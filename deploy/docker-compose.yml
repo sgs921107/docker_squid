@@ -1,0 +1,24 @@
+# 配置文件版本
+version: "3"
+
+
+# 管理的服务
+services:
+
+    squid:
+        image: sameersbn/squid:${SQUID_VERSION}
+        container_name: squid_${SQUID_VERSION}
+        ports:
+            - ${REAL_SQUID_PORT}:3128
+        volumes:
+            - ${SQUID_CONF}:/etc/squid/squid.conf:ro
+            - ${SQUID_USERS}:/etc/squid/ncsa_users:ro
+            - ${SQUID_CACHE}:/var/spool/squid:rw
+            - ${SQUID_LOGS}:/var/log/squid:rw
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "200m"
+                max-file: "3"
+        restart: always
+
