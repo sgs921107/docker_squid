@@ -1,0 +1,6 @@
+*.env
+/cache/
+/logs/
+*.cnf
+*.conf
+ncsa_users
