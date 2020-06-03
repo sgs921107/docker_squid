@@ -132,7 +132,7 @@ refresh_pattern .               0       20%     4320
 
 # 启动服务
 docker-compose up -d
-firewall-cmd --permanent --add-port=$REAL_SQUID_PORT
+firewall-cmd --permanent --add-port=$REAL_SQUID_PORT/tcp
 
 # 重新加载防火墙
 firewall-cmd --reload
