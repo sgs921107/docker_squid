@@ -13,8 +13,7 @@ services:
         volumes:
             - ${SQUID_CONF}:/etc/squid/squid.conf:ro
             - ${SQUID_USERS}:/etc/squid/ncsa_users:ro
-            - ${SQUID_CACHE}:/var/spool/squid:rw
-            - ${SQUID_LOGS}:/var/log/squid:rw
+            - ${SQUID_LOG_DIR}:/var/log/squid:rw
         logging:
             driver: "json-file"
             options:

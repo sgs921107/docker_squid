@@ -1,0 +1,17 @@
+# 1.docker-compose.yml
+# squid 版本
+SQUID_VERSION=3.5.27-2
+# 宿主机squid服务端口
+REAL_SQUID_PORT=3128
+# 宿主机squid日志目录
+SQUID_LOG_DIR=/var/log/squid
+
+# 2.squid服务配置
+# squid的用户名
+squid_username=squid
+# squid的密码
+squid_password=online
+# 最多允许多少个认证进程
+squid_children=20
+# 单ip的最大连接数
+squid_maxconn=50

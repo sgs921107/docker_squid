@@ -6,46 +6,18 @@
 #########################################################################
 #!/bin/bash
 
-# ===================run the script with root user=================================
-# ==========================开始配置==================================
 
-# 1.docker-compose.yml依赖配置
-# mysql 版本
-SQUID_VERSION=latest
-# 宿主机mysql服务端口
-REAL_SQUID_PORT=3128
-
-# 2.squid服务配置
-# squid的用户名
-squid_username=squid
-# squid的密码
-squid_password=online
-# 最多允许多少个认证进程
-squid_children=20
-# 单ip的最大连接数
-maxconn=50
-
-
-# 是否配置docker加速器   1/0
-docker_accelerator=1
-# 是否指定pip的下载源
-pip_repository=https://pypi.tuna.tsinghua.edu.cn/simple
-
-# ==========================配置结束==================================
-
-squid_dir=..
-mkdir -p $squid_dir/{cache,logs}
+conf_dir=/etc/squid
+source $conf_dir/.env
 
 
 # 声明变量
 install_docker_script=./install_docker.sh
-squid_conf=$squid_dir/squid.conf
-squid_users=$squid_dir/ncsa_users
-squid_cache=$squid_dir/cache
-squid_logs=$squid_dir/logs
+squid_conf=$conf_dir/squid.conf
+squid_users=$conf_dir/ncsa_users
 
 # 生成用户认证信息
-encrypt_ret=`curl --location --request POST https://tool.lu/htpasswd/ajax.html -d "username=$squid_username&password=$squid_password&type=md5"`
+encrypt_ret=`curl -XPOST -L -H "referer:https://tool.lu/htpasswd/" https://tool.lu/htpasswd/ajax.html -d "username=$squid_username&password=$squid_password&type=md5"`
 encrypt_content=`echo $encrypt_ret | grep true | awk -F ': ?"' '{print $2}' | awk -F '"}' '{print $1}'`
 if [ -z "$encrypt_content" ]
 then
@@ -54,34 +26,15 @@ then
 fi
 echo $encrypt_content > $squid_users
 
-if [ -n "$pip_repository" ]
-then
-    sed -i "s#pip install#pip install -i $pip_repository#g" $install_docker_script
-fi
-
-
 # 检查/安装docker和docker-compose
 sh $install_docker_script
-if [ -n "$pip_repository" ]
-then
-    git checkout $install_docker_script
-fi
-
-if [ "$docker_accelerator" = 1 ]
-then
-    echo '{"registry-mirrors":["https://docker.mirrors.ustc.edu.cn"]}' > /etc/docker/daemon.json
-    systemctl daemon-reload 
-    systemctl restart docker
-fi
-
 
 echo "SQUID_VERSION=$SQUID_VERSION
 REAL_SQUID_PORT=$REAL_SQUID_PORT
 
 SQUID_CONF=$squid_conf
 SQUID_USERS=$squid_users
-SQUID_LOGS=$squid_logs
-SQUID_CACHE=$squid_cache
+SQUID_LOG_DIR=$SQUID_LOG_DIR
 " > .env
 
 echo "http_port 3128
@@ -108,7 +61,7 @@ acl Safe_ports port 21
 acl Safe_ports port 443
 acl CONNECT method CONNECT
 
-acl OverConnLimit maxconn $maxconn
+acl OverConnLimit maxconn $squid_maxconn
 http_access deny OverConnLimit
 
 http_access allow manager localhost
@@ -120,6 +73,10 @@ http_access allow localhost
 http_access allow ncsa_users
 http_access deny all
 
+# 配置高匿名
+request_header_access Via deny all
+request_header_access X-Forwarded-For deny all
+
 cache_dir aufs /var/spool/squid 128 16 256
 coredump_dir /var/spool/squid
 cache_mem 128 MB
@@ -127,8 +84,7 @@ refresh_pattern ^ftp:           1440    20%     10080
 refresh_pattern ^gopher:        1440    0%      1440
 refresh_pattern -i (/cgi-bin/|\?) 0     0%      0
 refresh_pattern \.(jpg|png|gif|mp3|xml) 1440    50%     2880    ignore-reload
-refresh_pattern .               0       20%     4320
-" > $squid_conf
+refresh_pattern .               0       20%     4320" > $squid_conf
 
 # 启动服务
 docker-compose up -d
@@ -136,4 +92,3 @@ firewall-cmd --permanent --add-port=$REAL_SQUID_PORT/tcp
 
 # 重新加载防火墙
 firewall-cmd --reload
-
